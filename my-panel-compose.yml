@@ -1,0 +1,13 @@
+version: "3.2"
+
+services:
+  my-panel:
+    image: 'mr52hz/my-panel:latest'
+    container_name: my-panel
+    volumes:
+      - ./conf:/app/conf
+      - ./uploads:/app/uploads
+      - ./database:/app/database
+    ports:
+      - 3002:3002
+    restart: always

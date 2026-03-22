@@ -14,6 +14,17 @@ const showWallpaperInput = ref(false)
 
 const isSaveing = ref(false)
 
+const maxWidthLocal = ref(String(panelState.panelConfig.maxWidth ?? 1200))
+watch(() => panelState.panelConfig.maxWidth, (val) => {
+  maxWidthLocal.value = String(val ?? 1200)
+})
+watch(maxWidthLocal, (val) => {
+  const num = Number(val)
+  if (!isNaN(num)) {
+    panelState.panelConfig.maxWidth = num
+  }
+})
+
 const iconTypeOptions = [
   {
     label: t('apps.baseSettings.detailIcon'),
@@ -249,7 +260,7 @@ function resetPanelConfig() {
             <span class="mr-[10px]">{{ $t('apps.baseSettings.maxWidth') }}</span>
             <div class="flex">
               <NInputGroup>
-                <NInput v-model:value="panelState.panelConfig.maxWidth" size="small" type="number" :maxlength="10" :style="{ width: '100px' }" placeholder="1200" />
+                <NInput v-model:value="maxWidthLocal" size="small" :maxlength="10" :style="{ width: '100px' }" placeholder="1200" />
                 <NSelect v-model:value="panelState.panelConfig.maxWidthUnit" :style="{ width: '80px' }" :options="maxWidthUnitOption" size="small" />
               </NInputGroup>
             </div>
