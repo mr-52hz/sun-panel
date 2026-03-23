@@ -10,7 +10,7 @@ import { getList as getGroupList } from '@/api/panel/itemIconGroup'
 
 import { setTitle, updateLocalUserInfo } from '@/utils/cmn'
 import { useAuthStore, usePanelState } from '@/store'
-import { PanelPanelConfigStyleEnum, PanelStateNetworkModeEnum } from '@/enums'
+import { PanelPanelConfigStyleEnum } from '@/enums'
 import { VisitMode } from '@/enums/auth'
 import { router } from '@/router'
 import { t } from '@/locales'
@@ -74,14 +74,56 @@ function handleItemClick(itemGroupIndex: number, item: Panel.ItemInfo) {
     return
   }
 
-  let jumpUrl = ''
+  openWithFallback(item.lanUrl, item.url, item.openMethod, item.title)
+}
 
-  if (item)
-    jumpUrl = (panelState.networkMode === PanelStateNetworkModeEnum.lan ? item.lanUrl : item.url) as string
-  if (item.lanUrl === '')
-    jumpUrl = item.url
+function openWithFallback(lanUrl: string | undefined, wanUrl: string | undefined, openMethod: number, title?: string) {
+  if (!lanUrl || !wanUrl) {
+    openPage(openMethod, wanUrl || lanUrl || '', title)
+    return
+  }
 
-  openPage(item.openMethod, jumpUrl, item.title)
+  const iframe = document.createElement('iframe')
+  iframe.style.display = 'none'
+  iframe.src = lanUrl
+  
+  let timeoutId: number | undefined
+  let hasOpened = false
+  
+  const openWanUrl = () => {
+    if (!hasOpened) {
+      hasOpened = true
+      openPage(openMethod, wanUrl, title)
+    }
+    cleanup()
+  }
+  
+  const cleanup = () => {
+    if (timeoutId)
+      clearTimeout(timeoutId)
+    iframe.onload = null
+    iframe.onerror = null
+    if (iframe.parentNode)
+      iframe.parentNode.removeChild(iframe)
+  }
+  
+  iframe.onload = () => {
+    if (!hasOpened) {
+      hasOpened = true
+      openPage(openMethod, lanUrl, title)
+    }
+    cleanup()
+  }
+  
+  iframe.onerror = () => {
+    openWanUrl()
+  }
+  
+  document.body.appendChild(iframe)
+  
+  timeoutId = window.setTimeout(() => {
+    openWanUrl()
+  }, 1000)
 }
 
 function handWindowIframeIdLoad(payload: Event) {
@@ -114,12 +156,10 @@ function updateItemIconGroupByNet(itemIconGroupIndex: number, itemIconGroupId: n
 function handleRightMenuSelect(key: string | number) {
   dropdownShow.value = false
   // console.log(currentRightSelectItem, key)
-  let jumpUrl = panelState.networkMode === PanelStateNetworkModeEnum.lan ? currentRightSelectItem.value?.lanUrl : currentRightSelectItem.value?.url
-  if (currentRightSelectItem.value?.lanUrl === '')
-    jumpUrl = currentRightSelectItem.value.url
   switch (key) {
     case 'newWindows':
-      window.open(jumpUrl)
+      if (currentRightSelectItem.value)
+        openWithFallback(currentRightSelectItem.value.lanUrl, currentRightSelectItem.value.url, currentRightSelectItem.value.openMethod, currentRightSelectItem.value.title)
       break
     case 'openWanUrl':
       if (currentRightSelectItem.value)
@@ -181,15 +221,6 @@ function handleEditSuccess(item: Panel.ItemInfo) {
   getList()
 }
 
-function handleChangeNetwork(mode: PanelStateNetworkModeEnum) {
-  panelState.setNetworkMode(mode)
-  if (mode === PanelStateNetworkModeEnum.lan)
-    ms.success(t('panelHome.changeToLanModelSuccess'))
-
-  else
-    ms.success(t('panelHome.changeToWanModelSuccess'))
-}
-
 // 结束拖拽
 // function handleEndDrag(event: any, itemIconGroup: Panel.ItemIconGroup) {
 //   // console.log(event)
@@ -228,15 +259,11 @@ function getDropdownMenuOptions() {
 
   ]
 
-  if (currentRightSelectItem.value?.lanUrl && panelState.networkMode === PanelStateNetworkModeEnum.wan) {
+  if (currentRightSelectItem.value?.lanUrl) {
     dropdownMenuOptions.push({
       label: t('panelHome.openLanUrl'),
       key: 'openLanUrl',
-    })
-  }
-
-  if (currentRightSelectItem.value?.lanUrl && panelState.networkMode === PanelStateNetworkModeEnum.lan) {
-    dropdownMenuOptions.push({
+    }, {
       label: t('panelHome.openWanUrl'),
       key: 'openWanUrl',
     })
@@ -505,25 +532,6 @@ function handleAddItem(itemIconGroupId?: number) {
     <!-- 悬浮按钮 -->
     <div class="fixed-element shadow-[0_0_10px_2px_rgba(0,0,0,0.2)]">
       <NButtonGroup vertical>
-        <!-- 网络模式切换按钮组 -->
-        <NButton
-          v-if="panelState.networkMode === PanelStateNetworkModeEnum.lan && panelState.panelConfig.netModeChangeButtonShow" color="#2a2a2a6b"
-          :title="t('panelHome.changeToWanModel')" @click="handleChangeNetwork(PanelStateNetworkModeEnum.wan)"
-        >
-          <template #icon>
-            <SvgIcon class="text-white font-xl" icon="material-symbols:lan-outline-rounded" />
-          </template>
-        </NButton>
-
-        <NButton
-          v-if="panelState.networkMode === PanelStateNetworkModeEnum.wan && panelState.panelConfig.netModeChangeButtonShow" color="#2a2a2a6b"
-          :title="t('panelHome.changeToLanModel')" @click="handleChangeNetwork(PanelStateNetworkModeEnum.lan)"
-        >
-          <template #icon>
-            <SvgIcon class="text-white font-xl" icon="mdi:wan" />
-          </template>
-        </NButton>
-
         <NButton v-if="authStore.visitMode === VisitMode.VISIT_MODE_LOGIN" color="#2a2a2a6b" @click="settingModalShow = !settingModalShow">
           <template #icon>
             <SvgIcon class="text-white font-xl" icon="majesticons-applications" />
