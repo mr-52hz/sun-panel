@@ -541,23 +541,16 @@ function handleAddItem(itemIconGroupId?: number) {
     />
 
     <!-- 悬浮按钮 -->
-    <div class="fixed-element shadow-[0_0_10px_2px_rgba(0,0,0,0.2)]">
-      <NButtonGroup vertical>
-        <NButton v-if="authStore.visitMode === VisitMode.VISIT_MODE_LOGIN" color="#2a2a2a6b" @click="settingModalShow = !settingModalShow">
-          <template #icon>
-            <SvgIcon class="text-white font-xl" icon="majesticons-applications" />
-          </template>
-        </NButton>
+    <div class="fixed-element">
+      <div v-if="authStore.visitMode === VisitMode.VISIT_MODE_LOGIN" class="setting-btn" @click="settingModalShow = !settingModalShow">
+        <SvgIcon class="text-white text-xl" icon="majesticons-applications" />
+      </div>
 
-        <NButton v-if="authStore.visitMode === VisitMode.VISIT_MODE_PUBLIC" color="#2a2a2a6b" :title="$t('panelHome.goToLogin')" @click="router.push('/login')">
-          <template #icon>
-            <SvgIcon class="text-white font-xl" icon="material-symbols:account-circle" />
-          </template>
-        </NButton>
-      </NButtonGroup>
+      <div v-if="authStore.visitMode === VisitMode.VISIT_MODE_PUBLIC" class="setting-btn" :title="$t('panelHome.goToLogin')" @click="router.push('/login')">
+        <SvgIcon class="text-white text-xl" icon="material-symbols:account-circle" />
+      </div>
 
       <AppStarter v-model:visible="settingModalShow" />
-      <!-- <Setting v-model:visible="settingModalShow" /> -->
     </div>
 
     <NBackTop
@@ -648,11 +641,31 @@ html {
 
 .fixed-element {
   position: fixed;
-  /* 将元素固定在屏幕上 */
-  right: 10px;
-  /* 距离屏幕顶部的距离 */
-  bottom: 50px;
-  /* 距离屏幕左侧的距离 */
+  right: 16px;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.setting-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .icon-info-box {
