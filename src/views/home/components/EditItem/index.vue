@@ -29,7 +29,7 @@ const restoreDefault: Panel.Info = {
   url: '',
   lanUrl: '',
   description: '',
-  openMethod: 2,
+  openMethod: 1,
 }
 
 interface Emit {
