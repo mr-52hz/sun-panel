@@ -86,18 +86,11 @@ function openWithFallback(lanUrl: string | undefined, wanUrl: string | undefined
   const iframe = document.createElement('iframe')
   iframe.style.display = 'none'
   iframe.src = lanUrl
-  
+
   let timeoutId: number | undefined
   let hasOpened = false
-  
-  const openWanUrl = () => {
-    if (!hasOpened) {
-      hasOpened = true
-      openPage(openMethod, wanUrl, title)
-    }
-    cleanup()
-  }
-  
+  let loadingMessage: { destroy: () => void } | null = null
+
   const cleanup = () => {
     if (timeoutId)
       clearTimeout(timeoutId)
@@ -106,21 +99,39 @@ function openWithFallback(lanUrl: string | undefined, wanUrl: string | undefined
     if (iframe.parentNode)
       iframe.parentNode.removeChild(iframe)
   }
-  
+
+  const openWanUrl = () => {
+    if (!hasOpened) {
+      hasOpened = true
+      if (loadingMessage) {
+        loadingMessage.destroy()
+        loadingMessage = null
+      }
+      window.$message?.warning(t('panelHome.lanConnectFailedSwitchToWan'))
+      openPage(openMethod, wanUrl, title)
+    }
+    cleanup()
+  }
+
   iframe.onload = () => {
     if (!hasOpened) {
       hasOpened = true
+      if (loadingMessage) {
+        loadingMessage.destroy()
+        loadingMessage = null
+      }
       openPage(openMethod, lanUrl, title)
     }
     cleanup()
   }
-  
+
   iframe.onerror = () => {
     openWanUrl()
   }
-  
+
+  loadingMessage = window.$message?.loading(t('panelHome.tryingConnectLan'), { duration: 0 }) || null
   document.body.appendChild(iframe)
-  
+
   timeoutId = window.setTimeout(() => {
     openWanUrl()
   }, 1000)
